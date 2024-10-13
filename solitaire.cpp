@@ -4,10 +4,13 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <exception>
 
 const int kCntOfPiles = 8;
 const int kCardsInPile = 9;
 
+const std::array<char, kCardsInPile> kCards = // backwardTransform
+  {'6', '7', '8', '9', 't', 'J', 'Q', 'K', 'A'};
 std::map<char, char> forwardTransform = 
   { {'6', 0}, {'7', 1}, {'8', 2}, {'9', 3}, {'t', 4}, {'J', 5}, {'Q', 6}, {'K', 7}, {'A', 8}};
 
@@ -28,18 +31,31 @@ bool isGood(const TState& state, int indexOfPile) {
 }
 
 TState readData() {
+  std::cout << "Input Game:" << std::endl;
   TState data(kCntOfPiles);
 
   char priority;
+  std::map<char, int> cntOfCards;
   for (int i = 0; i < kCntOfPiles; ++i) {
     for (int j = 0; j < kCardsInPile; ++j) {
       std::cin >> priority;  
-      // TODO check correctness
+      if (std::find(kCards.begin(), kCards.end(), priority) == kCards.end()) {
+        throw std::logic_error("Invalid Input: Bad Character");
+      }
+      ++cntOfCards[priority];
       
       priority = forwardTransform[priority];
       data[i].push_back(priority);
     }
   }
+
+  for(auto kv : cntOfCards) {
+    if (kv.second != 8) {
+      throw std::logic_error("Invalid Input: Bad Cnt of Cards");
+    }
+  }
+
+  std::cout << "Input End" << std::endl;
 
   return data;
 }
@@ -68,8 +84,6 @@ int getCntOfNines(const TState& state) {
 }
 
 void printState(const TState& state) {
-  const std::array<char, kCardsInPile> kCards = // backwardTransform
-   {'6', '7', '8', '9', 't', 'J', 'Q', 'K', 'A'};
 
   std::cout << "Print State:" << std::endl;
   for(int i = 0; i < kCntOfPiles; ++i) {
