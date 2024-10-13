@@ -95,7 +95,7 @@ void printState(const TState& state) {
   std::cout << "End of State" << std::endl;
 }
 
-std::pair<bool, int> IsCan(const TState& start) {
+int tryFindAns(const TState& start) {
   std::queue<TState> qCur, qNext;
   qCur.push(start);
   std::set<TState> achievable;
@@ -117,12 +117,12 @@ std::pair<bool, int> IsCan(const TState& start) {
       if(canOptimize) {
         // printState(cur);
         if (isWin(cur)) {
-          return {true, iteratation};
+          return iteratation;
         }
 
         if (!achievable.contains(cur)) {
           achievable.insert(cur);
-          qCur.push(cur);
+          qCur.push(std::move(cur));
         }
 
         continue;
@@ -142,7 +142,7 @@ std::pair<bool, int> IsCan(const TState& start) {
 
             if (!achievable.contains(newState)) {
               achievable.insert(newState);
-              qNext.push(newState);
+              qNext.push(std::move(newState));
             }
           }
         }
@@ -153,7 +153,7 @@ std::pair<bool, int> IsCan(const TState& start) {
     std::swap(qCur, qNext);
   }
 
-  return {false, -1};
+  return -1;
 }
 
 int main() {
@@ -162,6 +162,17 @@ int main() {
   printState(start);
   
 
-  auto ans = IsCan(start);
-  std::cout << ans.first << '\n' << ans.second;
+  auto ans = tryFindAns(start);
+  if (ans == -1) {
+    std::cout << "No Solution!!!";
+  } else {
+    if (ans == 0) {
+      std::cout << "It's already been solved" << std::endl;
+    }
+    std::cout << "Can Solve by " << ans << " step";
+    if (ans != 1) {
+      std::cout << 's';
+    }
+  }
+
 }
