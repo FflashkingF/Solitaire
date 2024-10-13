@@ -84,7 +84,6 @@ int getCntOfNines(const TState& state) {
 }
 
 void printState(const TState& state) {
-
   std::cout << "Print State:" << std::endl;
   for(int i = 0; i < kCntOfPiles; ++i) {
     for(int j = 0; j < state[i].size(); ++j) {
@@ -95,63 +94,120 @@ void printState(const TState& state) {
   std::cout << "End of State" << std::endl;
 }
 
-int tryFindAns(const TState& start) {
-  std::queue<TState> qCur, qNext;
-  qCur.push(start);
-  std::set<TState> achievable;
+int calcGoodness(const TState& state) {
+  int ans = 0;
+  for (int i = 0; i < kCntOfPiles; ++i) {
+    bool biggestWas = false;
+    int cur = 0;
 
-  int iteratation = 0;
-  while(!qCur.empty()) {
-    while(!qCur.empty()) {
-      TState cur = qCur.front();
-      // printState(cur);
-      qCur.pop();
+    for (int j = 0; j < state[i].size(); ++j) {
+      if (state[i][j] == 7) {
+        biggestWas = true;
+        cur = 1;
+      }
 
-      bool canOptimize = false;
-      for (int i = 0; i < kCntOfPiles; ++i) {
-        if (isGood(cur, i)) {
-          cur[i].resize(cur[i].size() - kCardsInPile);
-          canOptimize = true;
+      if (cur > 0 && j && state[i][j - 1] == state[i][j] + 1) {
+        ++cur;
+      }
+      if(j && state[i][j - 1] != state[i][j] + 1) {
+        if (biggestWas) {
+          cur -= std::abs(state[i][j - 1] - state[i][j]);
         }
       }
-      if(canOptimize) {
-        // printState(cur);
-        if (isWin(cur)) {
-          return iteratation;
-        }
+      ans += cur;
+    }
+  }
+  return ans;
+}
 
-        if (!achievable.contains(cur)) {
-          achievable.insert(cur);
-          qCur.push(std::move(cur));
-        }
+struct El {
+  int cntOfCards;
+  int Goodness;
 
+  TState state;
+  int iteration;
+};
+
+bool operator<(const El& first, const El& second) {
+  return first.cntOfCards < second.cntOfCards || 
+          (first.cntOfCards == second.cntOfCards && first.Goodness > second.Goodness);
+}
+
+int tryFindAns(const TState& start) {
+  std::set<TState> achievable = {start};
+
+  std::multiset<El> q = 
+    {
+      {getCntOfCards(start), 
+          calcGoodness(start),
+          start,
+          0
+      }
+    };
+
+  //int someIt = 0;
+  while(!q.empty()) {
+    TState cur = std::move(q.begin()->state);
+    int iteration = q.begin()->iteration;
+    q.erase(q.begin());
+
+    // ++someIt;
+    // if (someIt % 1000 == 0) {
+    //   printState(cur);
+    // }
+
+    bool canOptimize = false;
+    for (int i = 0; i < kCntOfPiles; ++i) {
+      if (isGood(cur, i)) {
+        cur[i].resize(cur[i].size() - kCardsInPile);
+        canOptimize = true;
+      }
+    }
+    if(canOptimize) {
+      // printState(cur);
+      if (isWin(cur)) {
+        return iteration;
+      }
+
+      if (!achievable.contains(cur)) {
+        achievable.insert(cur);
+        q.insert({
+          getCntOfCards(cur),
+          calcGoodness(cur),
+          std::move(cur),
+          iteration
+        });
+      }
+
+      continue;
+    }
+
+    for (int indFrom = 0; indFrom < kCntOfPiles; ++indFrom) {
+      if (cur[indFrom].empty()) {
         continue;
       }
 
-      for (int indFrom = 0; indFrom < kCntOfPiles; ++indFrom) {
-        if (cur[indFrom].empty()) {
-          continue;
-        }
+    
+      for (int indTo = 0; indTo < kCntOfPiles; ++indTo) {
+        if (cur[indTo].empty() || cur[indFrom].back() < cur[indTo].back()) {
+          TState newState = cur;
+          newState[indTo].push_back(cur[indFrom].back());
+          newState[indFrom].pop_back();
 
-      
-        for (int indTo = 0; indTo < kCntOfPiles; ++indTo) {
-          if (cur[indTo].empty() || cur[indFrom].back() < cur[indTo].back()) {
-            TState newState = cur;
-            newState[indTo].push_back(cur[indFrom].back());
-            newState[indFrom].pop_back();
-
-            if (!achievable.contains(newState)) {
-              achievable.insert(newState);
-              qNext.push(std::move(newState));
-            }
+          if (!achievable.contains(newState)) {
+            achievable.insert(newState);
+            q.insert({
+              getCntOfCards(newState),
+              calcGoodness(newState),
+              std::move(newState),
+              iteration + 1
+            });
           }
         }
       }
     }
-
-    ++iteratation;
-    std::swap(qCur, qNext);
   }
+
 
   return -1;
 }
