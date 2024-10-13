@@ -18,7 +18,7 @@
 
 6) cmake ..
    
-7) make (после этой команды появился исполняемый файл - ../bin/Solitaire (Solitaire//bin/Solitaire)
+7) make (после этой команды появился исполняемый файл - ../bin/Solitaire (Solitaire/bin/Solitaire)
 
 
 # Корректный ввод:
